@@ -15,7 +15,7 @@ AI-powered football match prediction & betting analysis system for [OpenClaw](ht
   3. True implied probability calculation (margin-adjusted)
   4. Logistic regression models (Asian handicap + over/under)
   5. EV calculation & betting recommendations
-- **Dual Output Modes** — Concise (quick results) or Visual (full HTML reports with charts)
+- **Dual Output Modes** — Concise (quick results) or Markdown (full analysis reports)
 - **Post-Match Review & Learning** — Automated deviation analysis, weight optimization, accuracy tracking
 - **Enhanced Over/Under Model** — Half-time goal patterns, corner data, league factors, environmental variables
 
@@ -58,9 +58,9 @@ review result 2-1
 | Mode | Description |
 |------|-------------|
 | **Concise** | Best pick, probability, EV, predicted score |
-| **Visual** | Full HTML report with data tables, probability bars, formulas |
+| **Markdown** | Full Markdown report with data tables, probability bars, formulas |
 
-Default: Visual mode.
+Default: Markdown mode.
 
 ## How It Works
 

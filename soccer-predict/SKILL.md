@@ -5,7 +5,7 @@ description: >
   5 步量化分析框架，输出投注建议与预测比分。Football match betting prediction system. Auto-scrapes data from titan007.com (Asian handicap,
   over/under, European odds, fundamentals, lineups, corners, half-time goals), runs a 5-step
   quantitative analysis framework, and outputs betting recommendations with predicted scores.
-  Supports concise/visual dual output modes, post-match review, and auto weight optimization.
+  Supports concise/Markdown dual output modes, post-match review, and auto weight optimization.
   Triggers: (1) match ID like "2908467" or match description, (2) requests to predict/analyze
   football matches (e.g. "predict", "analyze this match"), (3) match results for post-match review
   (e.g. "review", "result was 2-1"), (4) handicap/over-under analysis.
@@ -20,9 +20,9 @@ description: >
 用户请求预测时，询问或推断偏好的输出格式：
 
 - **简洁模式 (Concise)**: 快速结果 - 最佳推荐、概率、EV、预测比分
-- **可视化模式 (Visual/Detailed)**: 完整 HTML 报告，含数据表格、公式、图表
+- **Markdown 报告模式**: 完整 Markdown 分析报告，含数据表格、公式和关键图表描述
 
-未指定时：默认使用可视化模式以获得最佳用户体验。
+未指定时：默认使用 Markdown 报告模式。
 
 ---
 
@@ -57,7 +57,7 @@ description: >
 
 **输出模式决定呈现方式：**
 - **简洁**：基于文本的快速摘要，关键数字
-- **可视化**：完整 HTML 报告，数据表格、概率条、公式展示
+- **Markdown 报告**：完整 Markdown 报告，数据表格、概率条、公式展示
 
 **步骤概述：**
 1. **数据整理** - 将所有收集的数据分类整理

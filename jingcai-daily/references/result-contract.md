@@ -5,7 +5,7 @@
 
 ## 每场结果 JSON
 
-每个候选 match ID 都必须有一个 JSON。`success` 同时需要 HTML；其他状态允许没有 HTML。
+每个候选 match ID 都必须有一个 JSON。`success` 同时需要 Markdown 报告；其他状态允许没有 Markdown。
 
 ```json
 {
@@ -24,7 +24,7 @@
   "probability": 0.56,
   "predicted_score": "2-0",
   "formal_recommendation": true,
-  "report_path": "soccer-prediction-journal/reports/2026-08-01/match-2912225.html",
+  "report_path": "soccer-prediction-journal/reports/2026-08-01/match-2912225.md",
   "missing_data": [],
   "error": ""
 }
@@ -33,12 +33,12 @@
 约束：
 
 - `analysis_status` 只能是 `success|waiting|incomplete|failed`。
-- `artifact_action` 只能是 `generated|refreshed|not_run`，表示这份 JSON/HTML 是怎样产生的。
+- `artifact_action` 只能是 `generated|refreshed|not_run`，表示这份 JSON/Markdown 是怎样产生的。
 - `match_id` 必须为纯数字字符串；不要写成 JSON 数字，以免未来 ID 格式变化造成兼容问题。
 - `kickoff_time` 和 `odds_snapshot_at` 使用 ISO 8601，并包含 `+08:00`。
 - `probability` 为 `0..1` 数值或 `null`。
 - `missing_data` 始终为数组，`error` 始终为字符串。
-- `success` 必须给出正式 `report_path`，且对应 HTML 完整存在。
+- `success` 必须给出正式 `report_path`，且对应 Markdown 完整存在。
 - `waiting/incomplete/failed` 的 `formal_recommendation` 必须为 `false`；可在 `recommendation` 中写“等待首发”或“数据不足，不投注”等非投注结论。
 - `reused` 只出现在本次 `run-manifest.json` 的 `run_action` 中；复用时不要改写正式 JSON，正式 JSON 保留原来的 `artifact_action`。
 
@@ -72,9 +72,9 @@
       "analysis_status": "success",
       "run_action": "generated",
       "attempt_result_path": "soccer-prediction-journal/reports/2026-08-01/runs/20260801T201500+0800/match-2912225.json",
-      "attempt_report_path": "soccer-prediction-journal/reports/2026-08-01/runs/20260801T201500+0800/match-2912225.html",
+      "attempt_report_path": "soccer-prediction-journal/reports/2026-08-01/runs/20260801T201500+0800/match-2912225.md",
       "canonical_result_path": "soccer-prediction-journal/reports/2026-08-01/match-2912225.json",
-      "canonical_report_path": "soccer-prediction-journal/reports/2026-08-01/match-2912225.html",
+      "canonical_report_path": "soccer-prediction-journal/reports/2026-08-01/match-2912225.md",
       "previous_success_retained": false,
       "error": ""
     }
@@ -88,15 +88,15 @@ Manifest 约束：
 - Manifest 的 `run_action` 只能是 `generated|refreshed|reused|not_run`，描述当前这次运行对该场采取的动作。
 - `excluded` 不进入 `candidates`，每条需保存 `reason` 和可用的原始字段。
 - `generated/refreshed` 总要有 `attempt_result_path`；状态为 `success` 时还必须有 `attempt_report_path`。
-- `reused` 不需要本次尝试路径，但必须给出已存在的正式 JSON 和 HTML 路径。
-- 正式路径固定为 `reports/{business_date}/match-{match_id}.json|html`。
+- `reused` 不需要本次尝试路径，但必须给出已存在的正式 JSON 和 Markdown 路径。
+- 正式路径固定为 `reports/{business_date}/match-{match_id}.json|md`。
 - 所有路径使用工作区相对路径，并且必须位于当前业务日目录下；拒绝 `..`、绝对路径和目录外文件。
 - 刷新失败时可保留原正式路径，但 `analysis_status` 仍记录本次失败，且 `previous_success_retained=true`。
 
 ## 发布顺序
 
 1. 冻结候选并创建 manifest。
-2. 写本次尝试 JSON/HTML，补齐 manifest 的 `results`。
+2. 写本次尝试 JSON/Markdown，补齐 manifest 的 `results`。
 3. 用 `validate_run.py --phase attempt` 校验。
 4. 仅发布校验通过的成功产物；失败刷新保留旧正式文件。
 5. 更新 manifest 后用 `--phase final` 校验。

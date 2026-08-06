@@ -21,15 +21,14 @@ Quick prediction results only - best for fast decisions:
 - Best pick with probability and EV
 - Predicted score
 
-### Mode B: 可视化模式 (Visual/Detailed)
-Full analysis with tables and charts:
+### Mode B: Markdown 报告模式
+Comprehensive Markdown analysis report:
 - Complete data tables (all odds, all bookmakers)
 - Detailed step-by-step analysis
 - Probability calculations with formulas
-- Visual probability bars
 - EV analysis for all options
 
-**Default**: If user doesn't specify, use Mode B (Visual) for first prediction, then ask preference.
+**Default**: If user doesn't specify, use Mode B (Markdown report) for first prediction, then ask preference.
 
 ---
 

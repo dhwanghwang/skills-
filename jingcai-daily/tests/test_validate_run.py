@@ -37,10 +37,10 @@ class ValidateRunTests(unittest.TestCase):
         path.write_text(json.dumps(value, ensure_ascii=False), encoding="utf-8")
 
     @staticmethod
-    def write_html(path: Path) -> None:
+    def write_md(path: Path) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(
-            "<!DOCTYPE html><html><head><title>test</title></head><body>ok</body></html>",
+            "# Test Match Report\n\nThis is a test markdown report.",
             encoding="utf-8",
         )
 
@@ -67,7 +67,7 @@ class ValidateRunTests(unittest.TestCase):
             "predicted_score": "2-1" if status == "success" else "",
             "formal_recommendation": status == "success",
             "report_path": (
-                f"soccer-prediction-journal/reports/{BUSINESS_DATE}/match-{MATCH_ID}.html"
+                f"soccer-prediction-journal/reports/{BUSINESS_DATE}/match-{MATCH_ID}.md"
                 if status == "success"
                 else ""
             ),
@@ -91,14 +91,14 @@ class ValidateRunTests(unittest.TestCase):
             "attempt_result_path": "",
             "attempt_report_path": "",
             "canonical_result_path": f"{canonical_prefix}/match-{MATCH_ID}.json",
-            "canonical_report_path": f"{canonical_prefix}/match-{MATCH_ID}.html",
+            "canonical_report_path": f"{canonical_prefix}/match-{MATCH_ID}.md",
             "previous_success_retained": previous_success_retained,
             "error": "" if status == "success" else "lineup verification failed",
         }
         if run_action != "reused":
             result["attempt_result_path"] = f"{run_prefix}/match-{MATCH_ID}.json"
             if status == "success":
-                result["attempt_report_path"] = f"{run_prefix}/match-{MATCH_ID}.html"
+                result["attempt_report_path"] = f"{run_prefix}/match-{MATCH_ID}.md"
         return result
 
     def manifest(self, result: dict, *, window_start: str | None = None) -> dict:
@@ -148,9 +148,9 @@ class ValidateRunTests(unittest.TestCase):
 
     def test_cross_midnight_generated_attempt_and_final_are_valid(self) -> None:
         attempt_json = self.run_dir / f"match-{MATCH_ID}.json"
-        attempt_html = self.run_dir / f"match-{MATCH_ID}.html"
+        attempt_md = self.run_dir / f"match-{MATCH_ID}.md"
         self.write_json(attempt_json, self.result_json())
-        self.write_html(attempt_html)
+        self.write_md(attempt_md)
         self.write_json(
             self.run_dir / "run-manifest.json",
             self.manifest(self.manifest_result()),
@@ -160,7 +160,7 @@ class ValidateRunTests(unittest.TestCase):
         self.assertEqual(attempt.returncode, 0, attempt.stdout + attempt.stderr)
 
         shutil.copy2(attempt_json, self.date_dir / f"match-{MATCH_ID}.json")
-        shutil.copy2(attempt_html, self.date_dir / f"match-{MATCH_ID}.html")
+        shutil.copy2(attempt_md, self.date_dir / f"match-{MATCH_ID}.md")
         final = self.run_validator("final")
         self.assertEqual(final.returncode, 0, final.stdout + final.stderr)
 
@@ -169,7 +169,7 @@ class ValidateRunTests(unittest.TestCase):
             self.date_dir / f"match-{MATCH_ID}.json",
             self.result_json(artifact_action="generated"),
         )
-        self.write_html(self.date_dir / f"match-{MATCH_ID}.html")
+        self.write_md(self.date_dir / f"match-{MATCH_ID}.md")
         self.write_json(
             self.run_dir / "run-manifest.json",
             self.manifest(self.manifest_result(run_action="reused")),
@@ -185,7 +185,7 @@ class ValidateRunTests(unittest.TestCase):
             self.date_dir / f"match-{MATCH_ID}.json",
             self.result_json(artifact_action="generated"),
         )
-        self.write_html(self.date_dir / f"match-{MATCH_ID}.html")
+        self.write_md(self.date_dir / f"match-{MATCH_ID}.md")
         self.write_json(
             self.run_dir / f"match-{MATCH_ID}.json",
             self.result_json(status="failed", artifact_action="refreshed"),
@@ -211,7 +211,7 @@ class ValidateRunTests(unittest.TestCase):
             self.run_dir / f"match-{MATCH_ID}.json",
             self.result_json(),
         )
-        self.write_html(self.run_dir / f"match-{MATCH_ID}.html")
+        self.write_md(self.run_dir / f"match-{MATCH_ID}.md")
         self.write_json(
             self.run_dir / "run-manifest.json",
             self.manifest(

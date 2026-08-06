@@ -79,7 +79,7 @@ def resolve_relative_path(
     return resolved
 
 
-def check_html(path: Path | None, label: str, errors: list[str]) -> None:
+def check_md(path: Path | None, label: str, errors: list[str]) -> None:
     if path is None:
         return
     try:
@@ -90,10 +90,8 @@ def check_html(path: Path | None, label: str, errors: list[str]) -> None:
     except (OSError, UnicodeError) as exc:
         errors.append(f"{label} cannot be read as UTF-8: {path}: {exc}")
         return
-    lowered = text.lower()
-    for marker in ("<!doctype html", "<html", "<head", "<body"):
-        if marker not in lowered:
-            errors.append(f"{label} is missing {marker!r}: {path}")
+    if not text.strip().startswith("#"):
+        errors.append(f"{label} does not start with a Markdown heading: {path}")
 
 
 def validate_result_json(
@@ -259,12 +257,12 @@ def validate_manifest(project_root: Path, manifest_path: Path, phase: str) -> li
             errors.append(f"{label}.previous_success_retained must be a boolean")
 
         canonical_result_rel = f"soccer-prediction-journal/reports/{business_date}/match-{match_id}.json"
-        canonical_report_rel = f"soccer-prediction-journal/reports/{business_date}/match-{match_id}.html"
+        canonical_report_rel = f"soccer-prediction-journal/reports/{business_date}/match-{match_id}.md"
         attempt_result_rel = (
             f"soccer-prediction-journal/reports/{business_date}/runs/{run_id}/match-{match_id}.json"
         )
         attempt_report_rel = (
-            f"soccer-prediction-journal/reports/{business_date}/runs/{run_id}/match-{match_id}.html"
+            f"soccer-prediction-journal/reports/{business_date}/runs/{run_id}/match-{match_id}.md"
         )
         if result.get("attempt_result_path") not in (None, "", attempt_result_rel):
             errors.append(f"{label}.attempt_result_path must use the fixed run path")
@@ -323,7 +321,7 @@ def validate_manifest(project_root: Path, manifest_path: Path, phase: str) -> li
                 label=f"{label} attempt JSON",
             )
             if status == "success":
-                check_html(attempt_report, f"{label} attempt HTML", errors)
+                check_md(attempt_report, f"{label} attempt Markdown", errors)
 
         if canonical_required:
             final_data = load_json(canonical_result, errors, f"{label} canonical JSON") if canonical_result else None
@@ -337,7 +335,7 @@ def validate_manifest(project_root: Path, manifest_path: Path, phase: str) -> li
                 errors=errors,
                 label=f"{label} canonical JSON",
             )
-            check_html(canonical_report, f"{label} canonical HTML", errors)
+            check_md(canonical_report, f"{label} canonical Markdown", errors)
 
     if len(result_ids) != len(set(result_ids)):
         errors.append("manifest.results contains duplicate match IDs")

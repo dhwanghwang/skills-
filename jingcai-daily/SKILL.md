@@ -17,7 +17,7 @@ description: >
 
 1. 完整读取项目级 `$soccer-predict` 及其当前任务需要的参考文档，把它作为单场分析引擎。
 2. 读取 [references/result-contract.md](references/result-contract.md)，按其中的字段和状态契约生成结果。
-3. 从当前工作区定位 `soccer-prediction-journal/`；所有报告和历史只写入该仓库，不写入 skill 目录。
+3. 项目根路径固定为 `F:\Workbuddy\soccer`，`soccer-prediction-journal/` 在此目录下；所有报告和历史只写入该仓库，不写入 skill 目录。
 
 ## 业务日与运行参数
 
@@ -77,14 +77,14 @@ description: >
 
 使用 match ID 作为唯一稳定文件名，不使用可能随队名变化的 slug：
 
-- 正式 HTML：`reports/{business_date}/match-{match_id}.html`
+- 正式 Markdown：`reports/{business_date}/match-{match_id}.md`
 - 正式 JSON：`reports/{business_date}/match-{match_id}.json`
-- 本次尝试 HTML：`reports/{business_date}/runs/{run_id}/match-{match_id}.html`
+- 本次尝试 Markdown：`reports/{business_date}/runs/{run_id}/match-{match_id}.md`
 - 本次尝试 JSON：`reports/{business_date}/runs/{run_id}/match-{match_id}.json`
 
 ### 普通运行与刷新
 
-- 普通运行只有在正式 HTML 存在、正式 JSON 的 `analysis_status` 为 `success`、业务日和 match ID 匹配，并且历史条目完整时才复用。复用结果保持 `analysis_status=success`，设置 `run_action=reused`。
+- 普通运行只有在正式 Markdown 存在、正式 JSON 的 `analysis_status` 为 `success`、业务日和 match ID 匹配，并且历史条目完整时才复用。复用结果保持 `analysis_status=success`，设置 `run_action=reused`。
 - 任一正式产物缺失、JSON 无法解析、状态不是 `success`、路径不合规或历史条目不完整时，重新分析并设置 `run_action=generated`。
 - 用户要求刷新赔率、重新分析或临场复测时设置 `run_action=refreshed`，始终重新采集；旧正式产物在新尝试通过校验前保持不变。
 - `skipped` 不是分析状态。分析质量使用 `analysis_status`，本次运行的动作使用 manifest 中的 `run_action`；正式 JSON 用 `artifact_action` 记录产物最初由生成还是刷新产生。
@@ -103,8 +103,8 @@ description: >
 2. 当 N <= W 时，每个子智能体负责一场；当 N > W 时，将场次按稳定顺序轮转或均衡分组，使每个子智能体负责的场次数相差不超过 1。实际分组始终以当前已上线且可用的子智能体数量为准。
 3. 分组时优先保持每个子任务的比赛数量均衡，同时把相同联赛或相近开球时间放在同一组仅作为可选优化；不能因为分组方便而改变候选集合、跳过比赛或把已开赛场次加入任务。
 4. 每个分配消息必须列出该子智能体负责的全部 match ID、竞彩编号、开球时间、主客队、business_date、run_id 和每场固定尝试路径。子智能体必须逐场处理自己的整个分组，不能只抓取盘口后提前结束。
-5. 子智能体的完成条件是“每场走完完整五步预测并提交结果”：包括基本面、伤停/首发状态、欧赔、亚盘、大小球、模型概率、胜平负、竞彩让球胜平负、预测比分、EV/价值判断、冷门与失效条件，以及该场 JSON 和完整 HTML。只有完成这些步骤后，才向主 agent 返回最终摘要。
-6. 子智能体可以并行抓取不同比赛，但不能并行写同一场的 JSON/HTML，也不能修改 run-manifest.json、daily-summary.html、历史、联赛资料或预测框架。每个 match ID 在运行目录中只能有一份结果。
+5. 子智能体的完成条件是"每场走完完整五步预测并提交结果"：包括基本面、伤停/首发状态、欧赔、亚盘、大小球、模型概率、胜平负、竞彩让球胜平负、预测比分、EV/价值判断、冷门与失效条件，以及该场 JSON 和完整 Markdown。只有完成这些步骤后，才向主 agent 返回最终摘要。
+6. 子智能体可以并行抓取不同比赛，但不能并行写同一场的 JSON/Markdown，也不能修改 run-manifest.json、历史、联赛资料或预测框架。每个 match ID 在运行目录中只能有一份结果。
 7. 主 agent 应维护一个内部分配表，记录 match_id -> worker -> status，并在回收结果后检查每场是否有最终产物。某个子智能体中断时，只把未完成的 match ID 重新分配给空闲槽位；不要让两个子智能体同时重写同一场。
 8. 不要为了缩短等待而在子智能体完成数据采集后主动打断其模型和报告阶段。若确实超时或工具失败，才将该场标为 incomplete 或 failed，保留错误与缺失数据，并由主 agent 决定是否安全重试。
 
@@ -113,14 +113,14 @@ description: >
 1. 派发后，主 agent 必须对所有活动 worker 建立 match_id -> worker -> status 回收表，并使用多目标等待能力持续等待；不得因为暂时没有文件、没有最终摘要或等待一次超时，就判定 worker 失败。
 2. pending_init、running 和“已写入部分产物但尚未返回终态”都不是失败。主 agent 不得在这些状态下调用 close_agent 或 interrupt=true，也不得为了提前交付而中止其分析。
 3. 长任务可以分段等待并发送不打断工作的进度询问，但累计等待必须持续到每个 worker 返回 completed、明确 errored 或明确 interrupted。只有明确终态且确认该场未完成时，才允许把 match ID 重新分配给空闲槽位。
-4. worker 返回 completed 后，主 agent 仍须读取并校验该 worker 的 JSON/HTML；交付文件存在不等于 worker 已返回终态，不能因此提前关闭。只有读取完成状态、校验产物并记录结果后，才可关闭已完成 worker。
+4. worker 返回 completed 后，主 agent 仍须读取并校验该 worker 的 JSON/Markdown；交付文件存在不等于 worker 已返回终态，不能因此提前关闭。只有读取完成状态、校验产物并记录结果后，才可关闭已完成 worker。
 5. 如果用户在等待期间追加问题，先报告仍在等待的 worker 和已收到的交付，再继续等待；不要因一次对话更新而丢弃或关闭未完成的 worker。
-6. 主 agent 不得重做仍在运行 worker 负责的同一场分析。可以并行准备不重叠的汇总模板、校验命令和发布计划，但不得覆盖 worker 的尝试 JSON/HTML。
+6. 主 agent 不得重做仍在运行 worker 负责的同一场分析。可以并行准备不重叠的汇总模板、校验命令和发布计划，但不得覆盖 worker 的尝试 JSON/Markdown。
 
 向每个分析单元传递以下明确契约；单场分配时填写一个 match_id，分组分配时列出该 worker 负责的全部 match ID，并将每场的固定尝试路径逐一展开：
 
 ```text
-使用 $soccer-predict 预测比赛 {match_id}，完成完整五步分析和可视化报告。
+使用 $soccer-predict 预测比赛 {match_id}，完成完整五步分析和 Markdown 报告。
 业务日期：{business_date}
 业务窗口：{business_start} 至 {business_end}
 已核验开球时间：{kickoff_time}
@@ -128,14 +128,14 @@ description: >
 这是 batch_mode=true、archive_mode=parent 的批量调用。
 使用 soccer-predict 的数据采集、模型和报告规则，但本调用由父级工作流接管归档阶段：
 不要执行其单场模式的强制历史归档，不要修改 football-match-history.md、
-football-league-profiles.md 或 prediction-framework.md，也不要写 daily-summary.html。
+football-league-profiles.md 或 prediction-framework.md，汇总由主 agent 负责。
 
-本次尝试 HTML：soccer-prediction-journal/reports/{business_date}/runs/{run_id}/match-{match_id}.html
+本次尝试 Markdown：soccer-prediction-journal/reports/{business_date}/runs/{run_id}/match-{match_id}.md
 本次尝试 JSON：soccer-prediction-journal/reports/{business_date}/runs/{run_id}/match-{match_id}.json
 正式路径由主 agent 校验后发布，分析单元不得直接覆盖正式文件。
 
 JSON 是每场必需产物，必须符合 jingcai-daily/references/result-contract.md。
-success 必须同时生成完整 HTML；waiting、incomplete 或 failed 仍必须生成 JSON，HTML 可省略。
+success 必须同时生成完整 Markdown；waiting、incomplete 或 failed 仍必须生成 JSON，Markdown 可省略。
 如果分析单元无法写 JSON，返回完整 JSON payload，由主 agent 写入运行目录。
 关键赔率、开球状态、阵容或独立核验数据缺失时，不得给出高置信度正式推荐。
 ```
@@ -150,7 +150,7 @@ success 必须同时生成完整 HTML；waiting、incomplete 或 failed 仍必�
 
 ```text
 python F:\Workbuddy\soccer\skills\jingcai-daily\scripts\validate_run.py \
-  --project-root <workspace-root> \
+  --project-root F:\Workbuddy\soccer \
   --manifest soccer-prediction-journal/reports/{business_date}/runs/{run_id}/run-manifest.json \
   --phase attempt
 ```
@@ -159,7 +159,7 @@ python F:\Workbuddy\soccer\skills\jingcai-daily\scripts\validate_run.py \
 
 ### 3.2 安全发布
 
-- `generated/refreshed + success`：仅在本次 JSON 与 HTML 都通过校验后，才在同一文件系统内替换对应正式文件。
+- `generated/refreshed + success`：仅在本次 JSON 与 Markdown 都通过校验后，才在同一文件系统内替换对应正式文件。
 - `reused + success`：保留正式文件，不重复复制或改写历史。
 - `waiting/incomplete/failed`：保留运行 JSON，不发布为正式结果，也不改写已有成功产物。
 - 刷新失败时，在 manifest 和汇总中标记 `previous_success_retained=true`；旧报告只能作为“上次成功版本”展示，不能冒充本次刷新成功。
@@ -170,8 +170,7 @@ python F:\Workbuddy\soccer\skills\jingcai-daily\scripts\validate_run.py \
 1. 候选清单中的每个 match ID 必须恰好对应一个结果；重复、遗漏或目录外路径都视为运行不完整。
 2. 所有 `analysis_status=success` 的结果都进入正式汇总，包括 `run_action=reused`。
 3. `waiting`、`incomplete` 和 `failed` 单独列出原因；刷新失败且保留旧版本时明确标注旧版本时间。
-4. 更新 `reports/{business_date}/daily-summary.html`，包含业务窗口、运行 ID、赔率截点、来源、状态与动作统计、推荐、失败清单、报告链接和免责声明。
-5. 不创建 `daily-summary-v2.html` 等变体绕过幂等规则；同一业务日的正式汇总始终更新固定文件。
+4. 将汇总结果以 Markdown 表格形式直接返回给用户，包含：业务窗口、运行 ID、赔率截点、来源、状态与动作统计、推荐、失败清单、报告链接和免责声明。
 
 ### 3.4 历史归档与旧数据兼容
 
@@ -198,7 +197,7 @@ python F:\Workbuddy\soccer\skills\jingcai-daily\scripts\validate_run.py \
 
 按项目级仓库映射执行：
 
-1. 定位 soccer-prediction-journal/ 仓库和其配置的默认分支。预测历史仓库通常为 E:\codex_project\soccer-prediction-journal 的 main。
+1. 定位 soccer-prediction-journal/ 仓库和其配置的默认分支。预测历史仓库路径为 `F:\Workbuddy\soccer\soccer-prediction-journal` 的 main。
 2. 运行 git status --short --branch，确认本次变更范围；只暂存本次业务日的报告、运行 manifest、汇总文件和本次实际更新的历史条目，禁止使用 git add -A 静默带入无关改动。
 3. 推送前运行 git fetch origin <branch>，用 git rev-list --left-right --count HEAD...origin/<branch> 确认没有分叉。发现远端领先或已分叉时停止推送并报告，不强制覆盖远端。
 4. 提交信息使用简洁稳定格式，例如 Add {business_date} Jingcai prediction records；提交前再次检查 staged diff。
@@ -208,7 +207,7 @@ python F:\Workbuddy\soccer\skills\jingcai-daily\scripts\validate_run.py \
 
 ## 状态语义与降级
 
-- `success`：关键数据和必要核验完成，JSON 合规且 HTML 完整；允许进入正式汇总。
+- `success`：关键数据和必要核验完成，JSON 合规且 Markdown 完整；允许进入正式汇总。
 - `waiting`：预期可在开球前补齐的临时数据尚未出现，例如首发待公布；不发布正式推荐。
 - `incomplete`：分析已结束但必要核验仍缺失或已没有安全重试窗口；不发布正式推荐。
 - `failed`：抓取、工具、文件写入或分析过程发生技术失败。
@@ -223,9 +222,9 @@ python F:\Workbuddy\soccer\skills\jingcai-daily\scripts\validate_run.py \
 2. 对每场调用 `$soccer-predict` 复盘流程，但沿用 `archive_mode=parent`：分析单元只返回偏差分析、联赛资料建议和权重调整建议，不写共享文件。
 3. 主 agent 按 `kickoff_time + match_id` 的稳定顺序串行应用复盘。每处理一场前重新读取最新权重，遵守 soccer-predict 的单场学习护栏，再写回权重和版本。
 4. 原地更新带稳定键的历史条目，不为同一场另建赛前条目；没有可靠赛果时保持“待确认”，不更新权重。
-5. 更新 `reports/{business_date}/review-summary.html`，汇总推荐、实际赛果、命中、偏差原因、是否参与学习和累计统计。
+5. 将复盘结果以 Markdown 表格形式直接返回给用户，汇总推荐、实际赛果、命中、偏差原因、是否参与学习和累计统计。
 
 ## 最终交付
 
-最终回复必须包含：业务窗口、候选/成功/复用/待核验/失败数量、汇总报告链接、成功场次报告链接、刷新失败但保留旧版本的清单、历史归档结果，以及 GitHub 推送的仓库、分支、commit 和同步状态。
+最终回复必须包含：业务窗口、候选/成功/复用/待核验/失败数量、汇总结果（Markdown 表格）、成功场次报告链接、刷新失败但保留旧版本的清单、历史归档结果，以及 GitHub 推送的仓库、分支、commit 和同步状态。
 只提供可点击的本地文件链接，不自动打开报告。
