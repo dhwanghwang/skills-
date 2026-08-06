@@ -1,0 +1,54 @@
+<!-- components/calendar-grid/calendar-grid.wxml -->
+<view class="calendar">
+  <!-- 月份导航栏 -->
+  <view class="cal-header">
+    <view class="month-nav" bindtap="onPrevMonth">
+      <text class="nav-arrow">&#9664;</text>
+    </view>
+    <text class="month-title">{{year}}年{{month}}月</text>
+    <view class="month-nav" bindtap="onNextMonth">
+      <text class="nav-arrow">&#9654;</text>
+    </view>
+  </view>
+
+  <!-- 星期头 -->
+  <view class="weekday-row">
+    <text wx:for="{{weekDays}}" wx:key="*this" class="weekday {{index === 0 ? 'sun' : ''}} {{index === 6 ? 'sat' : ''}}">{{item}}</text>
+  </view>
+
+  <!-- 日期网格 -->
+  <view class="date-grid">
+    <view
+      wx:for="{{calendarData}}"
+      wx:key="date"
+      class="{{item.className}}"
+      data-date="{{item.date}}"
+      data-isinteractive="{{item.isInteractive}}"
+      bindtap="onDateTap"
+      bindlongpress="onDateLongpress"
+    >
+      <!-- 易孕期底色块 -->
+      <view wx:if="{{item.isFertile && !item.isPeriod}}" class="fertile-bg"></view>
+
+      <!-- 经期高亮圆底 -->
+      <view wx:if="{{item.isPeriod}}" class="period-highlight"></view>
+
+      <!-- 预测经期虚线圈 -->
+      <view wx:if="{{item.isPredicted && !item.isPeriod}}" class="predicted-ring"></view>
+
+      <!-- 日期数字 -->
+      <text class="date-num">{{item.day}}</text>
+
+      <!-- 排卵日蓝点 -->
+      <view wx:if="{{item.isOvulation && !item.isPeriod}}" class="ovulation-dot"></view>
+
+      <!-- 今日圆环 -->
+      <view wx:if="{{item.isToday}}" class="today-ring"></view>
+    </view>
+  </view>
+
+  <!-- 回到今天浮动按钮 -->
+  <view class="back-today {{showBackToToday ? 'show' : ''}}" bindtap="onBackToToday">
+    <text class="back-today-text">今天</text>
+  </view>
+</view>

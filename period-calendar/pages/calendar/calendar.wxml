@@ -1,0 +1,98 @@
+<!-- pages/calendar/calendar.wxml -->
+<view class="page">
+  <!-- 周期状态卡片 -->
+  <cycle-summary
+    cycles="{{cycles}}"
+    prediction="{{prediction}}"
+  />
+
+  <!-- 日历组件 -->
+  <view class="calendar-section">
+    <calendar-grid
+      year="{{year}}"
+      month="{{month}}"
+      markedDates="{{markedDates}}"
+      prediction="{{prediction}}"
+      bind:datetap="onDateTap"
+      bind:monthchange="onMonthChange"
+    />
+  </view>
+
+  <!-- 图例 -->
+  <view class="legend">
+    <view class="legend-item">
+      <view class="legend-dot period-solid"></view>
+      <text>经期</text>
+    </view>
+    <view class="legend-item">
+      <view class="legend-dot period-dashed"></view>
+      <text>预测经期</text>
+    </view>
+    <view class="legend-item">
+      <view class="legend-dot ovulation"></view>
+      <text>排卵日</text>
+    </view>
+    <view class="legend-item">
+      <view class="legend-dot fertile"></view>
+      <text>易孕期</text>
+    </view>
+  </view>
+
+  <!-- 操作提示 -->
+  <view class="quick-actions">
+    <text class="hint">点日期标记经期 · 再点已标记日期可删除</text>
+  </view>
+</view>
+
+<!-- ========== 底部操作面板 ========== -->
+<view class="panel-mask {{showPanel ? 'show' : ''}}" bindtap="onPanelMaskTap"></view>
+
+<!-- 标记经期面板 -->
+<view class="panel {{showPanel && panelType === 'mark' ? 'show' : ''}}" wx:if="{{panelType === 'mark'}}">
+  <view class="panel-handle"></view>
+
+  <text class="panel-title">标记经期</text>
+  <text class="panel-subtitle">从 {{panelDate}} 开始，持续几天？</text>
+
+  <!-- 快捷天数选择 -->
+  <view class="duration-row">
+    <view
+      wx:for="{{presetDurations}}"
+      wx:key="*this"
+      class="duration-pill {{item === selectedDuration ? 'active' : ''}}"
+      data-days="{{item}}"
+      bindtap="onSelectDuration"
+    >
+      <text class="pill-days">{{item}}</text>
+      <text class="pill-label">天</text>
+    </view>
+  </view>
+
+  <!-- 预览 -->
+  <view class="preview-bar">
+    <text class="preview-label">预计范围</text>
+    <view class="preview-range">
+      <text class="preview-date">{{previewStart}}</text>
+      <text class="preview-arrow">→</text>
+      <text class="preview-date">{{previewEnd}}</text>
+    </view>
+  </view>
+
+  <view class="panel-actions">
+    <button class="p-btn cancel" bindtap="onClosePanel">取消</button>
+    <button class="p-btn confirm" bindtap="onConfirmMark">确认标记</button>
+  </view>
+</view>
+
+<!-- 编辑/删除面板 -->
+<view class="panel {{showPanel && panelType === 'edit' ? 'show' : ''}}" wx:if="{{panelType === 'edit'}}">
+  <view class="panel-handle"></view>
+
+  <text class="panel-title">经期记录</text>
+  <text class="panel-subtitle">{{editStartDate}} ~ {{editEndDate}}</text>
+
+  <view class="panel-actions single">
+    <button class="p-btn cancel" bindtap="onClosePanel">关闭</button>
+    <button class="p-btn danger" bindtap="onDeleteCycle">删除记录</button>
+  </view>
+</view>

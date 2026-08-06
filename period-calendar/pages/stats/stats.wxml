@@ -1,0 +1,52 @@
+<!-- pages/stats/stats.wxml -->
+<view class="page">
+  <view class="header">
+    <text class="page-title">统计分析</text>
+    <text class="subtitle">基于 {{stats.totalRecords || 0}} 条记录</text>
+  </view>
+
+  <!-- 核心指标卡片 -->
+  <view class="stats-grid">
+    <view class="stat-card">
+      <text class="stat-value">{{stats.avgCycle || '-'}}</text>
+      <text class="stat-label">平均周期（天）</text>
+    </view>
+    <view class="stat-card">
+      <text class="stat-value">{{stats.avgPeriod || '-'}}</text>
+      <text class="stat-label">平均经期（天）</text>
+    </view>
+    <view class="stat-card">
+      <text class="stat-value">{{stats.minCycle || '-'}} ~ {{stats.maxCycle || '-'}}</text>
+      <text class="stat-label">周期范围（天）</text>
+    </view>
+    <view class="stat-card">
+      <text class="stat-value">{{stats.cycleTrend || '-'}}</text>
+      <text class="stat-label">周期趋势</text>
+    </view>
+  </view>
+
+  <!-- 历史记录列表 -->
+  <view class="history-section" wx:if="{{cycles.length > 0}}">
+    <text class="section-title">历史记录</text>
+    <view class="history-list">
+      <view
+        wx:for="{{cycles}}"
+        wx:key="startDate"
+        class="history-item"
+      >
+        <view class="history-left">
+          <view class="history-dot"></view>
+          <text class="history-date">{{item.startDate}} ~ {{item.endDate}}</text>
+        </view>
+        <text class="history-days">{{item.periodLength || '?'}}天</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty" wx:if="{{cycles.length === 0}}">
+    <text class="empty-icon">📊</text>
+    <text class="empty-text">还没有记录</text>
+    <text class="empty-hint">去日历页点击日期开始记录吧</text>
+  </view>
+</view>
