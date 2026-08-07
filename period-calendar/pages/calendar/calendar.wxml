@@ -42,6 +42,20 @@
   <view class="quick-actions">
     <text class="hint">点日期标记经期 · 再点已标记日期可删除</text>
   </view>
+
+  <!-- ========== 提醒引导横幅（标记经期后自动出现） ========== -->
+  <view class="remind-banner {{showRemindBanner ? 'show' : ''}}" wx:if="{{showRemindBanner}}">
+    <view class="banner-close" bindtap="onDismissBanner">
+      <text>✕</text>
+    </view>
+    <remind-btn
+      mode="card"
+      reminder-text="{{reminderText}}"
+      auto-hide="{{true}}"
+      bind:subscribed="onRemindSubscribed"
+      bind:cancelled="onRemindCancelled"
+    />
+  </view>
 </view>
 
 <!-- ========== 底部操作面板 ========== -->
@@ -54,7 +68,6 @@
   <text class="panel-title">标记经期</text>
   <text class="panel-subtitle">从 {{panelDate}} 开始，持续几天？</text>
 
-  <!-- 快捷天数选择 -->
   <view class="duration-row">
     <view
       wx:for="{{presetDurations}}"
@@ -68,7 +81,6 @@
     </view>
   </view>
 
-  <!-- 预览 -->
   <view class="preview-bar">
     <text class="preview-label">预计范围</text>
     <view class="preview-range">

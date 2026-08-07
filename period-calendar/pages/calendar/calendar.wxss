@@ -248,3 +248,37 @@
   background: #FFF0F0;
   color: #E84A6B;
 }
+
+/* ========== 提醒引导横幅 ========== */
+
+.remind-banner {
+  margin: 0 24rpx;
+  position: relative;
+  opacity: 0;
+  transform: translateY(20rpx);
+  transition: opacity 0.35s, transform 0.35s;
+  pointer-events: none;
+}
+
+.remind-banner.show {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.banner-close {
+  position: absolute;
+  top: 8rpx;
+  right: 12rpx;
+  width: 40rpx;
+  height: 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.banner-close text {
+  font-size: 24rpx;
+  color: #C0A0A8;
+}

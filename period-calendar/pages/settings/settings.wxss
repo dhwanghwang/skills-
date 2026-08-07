@@ -100,6 +100,17 @@
   color: #CCC;
 }
 
+.section-subtitle {
+  font-size: 24rpx;
+  color: #999;
+  padding: 16rpx 0 8rpx;
+}
+
+/* remind-btn 在设置页的间距 */
+.section .remind-btn--inline {
+  margin: 8rpx 0 16rpx;
+}
+
 /* 保存按钮 */
 .save-btn {
   margin: 40rpx 24rpx;

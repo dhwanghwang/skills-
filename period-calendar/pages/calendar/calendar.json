@@ -1,8 +1,9 @@
 {
   "usingComponents": {
     "calendar-grid": "/components/calendar-grid/calendar-grid",
-    "cycle-summary": "/components/cycle-summary/cycle-summary"
+    "cycle-summary": "/components/cycle-summary/cycle-summary",
+    "remind-btn": "/components/remind-btn/remind-btn"
   },
   "navigationBarTitleText": "经期日历",
-  "enablePullDownRefresh": true
+  "enablePullDownRefresh": false
 }

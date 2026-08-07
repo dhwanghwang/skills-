@@ -1,9 +1,10 @@
 /**
  * pages/calendar/calendar.js
- * 日历主页 — 控制日期标记、底部面板、数据加载
+ * 日历主页 — 控制日期标记、底部面板、数据加载、提醒引导
  */
 const { predict } = require('../../utils/predict');
 const { today, addDays, formatDate, daysBetween } = require('../../utils/calendar');
+const remind = require('../../utils/remind');
 const cycleService = require('../../services/cycle');
 
 Page({
@@ -18,13 +19,17 @@ Page({
     showPanel: false,
     panelType: '',              // 'mark' | 'edit' | 'delete'
     panelDate: '',              // 用户点击的日期
-    selectedDuration: 5,        // 用户选择的持续天数（默认 5 天）
+    selectedDuration: 5,        // 用户选择的持续天数
     presetDurations: [1, 2, 3, 4, 5, 6, 7],
     previewStart: '',
     previewEnd: '',
 
     // 面板动画
     panelAnimating: false,
+
+    // 提醒引导横幅
+    showRemindBanner: false,    // 标记经期后是否显示提醒引导
+    reminderText: '',           // 提醒引导文案
   },
 
   onLoad() {
@@ -57,7 +62,18 @@ Page({
         }
       });
 
-      this.setData({ cycles, prediction: predictionResult, markedDates });
+      // 检查提醒引导横幅
+      const remindConfig = remind.loadConfig();
+      const remindText = remind.getReminderText(predictionResult, remindConfig);
+      const showBanner = remind.shouldShowOnboardGuide() && remindConfig.remindEnabled;
+
+      this.setData({
+        cycles,
+        prediction: predictionResult,
+        markedDates,
+        showRemindBanner: showBanner,
+        reminderText: remindText.title,
+      });
     } catch (err) {
       console.error('加载失败', err);
       wx.showToast({ title: '加载失败，下拉重试', icon: 'none' });
@@ -77,10 +93,8 @@ Page({
     const { markedDates } = this.data;
 
     if (markedDates[date] && markedDates[date].isPeriod) {
-      // 已标记 → 弹出删除编辑面板
       this.openEditPanel(date, markedDates[date]);
     } else {
-      // 未标记 → 弹出快速标记面板
       this.openMarkPanel(date);
     }
   },
@@ -89,7 +103,6 @@ Page({
 
   openMarkPanel(date) {
     const { prediction } = this.data;
-    // 默认时长优先取用户历史平均值
     const defaultDuration = prediction && prediction.avgPeriodLength
       ? prediction.avgPeriodLength
       : 5;
@@ -119,7 +132,6 @@ Page({
     wx.showLoading({ title: '保存中' });
 
     try {
-      // 逐天标记（云函数自动合并相邻日期）
       for (let i = 0; i < selectedDuration; i++) {
         const d = addDays(panelDate, i);
         await cycleService.markDay(d);
@@ -127,11 +139,47 @@ Page({
       this.setData({ showPanel: false, panelAnimating: false, panelType: '' });
       wx.showToast({ title: '已记录', icon: 'success' });
       await this.loadData();
+
+      // ==== 标记成功后 → 显示提醒引导横幅 ====
+      this.showRemindGuide();
     } catch (err) {
       wx.showToast({ title: '保存失败', icon: 'none' });
     } finally {
       wx.hideLoading();
     }
+  },
+
+  // ==================== 提醒引导 ====================
+
+  showRemindGuide() {
+    // 已经订阅就不弹了
+    if (remind.isSubscribed()) return;
+    // 每天最多弹一次
+    if (!remind.shouldShowOnboardGuide()) return;
+
+    const { prediction } = this.data;
+    const config = remind.loadConfig();
+    const { title } = remind.getReminderText(prediction, config);
+
+    remind.markGuideShown();
+
+    this.setData({
+      showRemindBanner: true,
+      reminderText: title,
+    });
+  },
+
+  onRemindSubscribed() {
+    this.setData({ showRemindBanner: false });
+    wx.showToast({ title: '提醒已开启！', icon: 'success' });
+  },
+
+  onRemindCancelled() {
+    this.setData({ showRemindBanner: false });
+  },
+
+  onDismissBanner() {
+    this.setData({ showRemindBanner: false });
   },
 
   // ==================== 编辑/删除面板 ====================
@@ -173,7 +221,6 @@ Page({
     this.onClosePanel();
   },
 
-  // 阻止面板内滑动穿透到底层
   preventTouchMove() {
     return;
   },

@@ -45,8 +45,8 @@
       <view class="picker-wrap">
         <picker
           mode="selector"
-          range="{{[1, 2, 3]}}"
-          value="{{remindBefore - 1}}"
+          range="{{['1天前', '2天前', '3天前', '5天前', '7天前']}}"
+          value="{{remindBefore === 1 ? 0 : remindBefore === 2 ? 1 : remindBefore === 3 ? 2 : remindBefore === 5 ? 3 : 4}}"
           bindchange="onRemindBeforeChange"
         >
           <text class="picker-val">{{remindBefore}}天前</text>
@@ -63,10 +63,14 @@
       />
     </view>
 
-    <view class="setting-item" bindtap="requestSubscribe">
-      <text class="setting-label">消息通知授权</text>
-      <text class="arrow">▶</text>
-    </view>
+    <!-- 订阅消息授权 -->
+    <view class="section-subtitle">消息授权</view>
+    <remind-btn
+      mode="inline"
+      auto-hide="{{false}}"
+      bind:subscribed="onRemindSubscribed"
+      bind:cancelled="onRemindCancelled"
+    />
   </view>
 
   <!-- 保存按钮 -->

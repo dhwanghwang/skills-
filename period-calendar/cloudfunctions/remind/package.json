@@ -1,0 +1,9 @@
+{
+  "name": "remind",
+  "version": "1.0.0",
+  "description": "经期提醒云函数 — 同步配置 + 定时发送订阅消息",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "latest"
+  }
+}
