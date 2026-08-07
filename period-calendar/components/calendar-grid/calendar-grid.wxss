@@ -33,8 +33,9 @@
 }
 
 .nav-arrow {
-  font-size: 22rpx;
-  color: #888;
+  font-size: 32rpx;
+  color: #666;
+  line-height: 1;
 }
 
 .month-title {
@@ -183,7 +184,7 @@
 
 .back-today {
   position: absolute;
-  top: 28rpx;
+  bottom: 16rpx;
   right: 16rpx;
   background: #E84A6B;
   color: #fff;

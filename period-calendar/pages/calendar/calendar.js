@@ -43,7 +43,8 @@ Page({
     wx.showNavigationBarLoading();
     try {
       const cycles = await cycleService.listCycles();
-      const predictionResult = predict(cycles);
+      const settings = wx.getStorageSync('periodSettings') || {};
+      const predictionResult = predict(cycles, settings);
 
       const markedDates = {};
       cycles.forEach(c => {

@@ -112,12 +112,12 @@ function buildFallback(cycleLen, periodLen) {
 function fromSingleRecord(onlyCycle, defaultCycle, defaultPeriod) {
   return predict(
     [
-      onlyCycle,
       {
-        startDate: addDays(onlyCycle.startDate, defaultCycle),
-        endDate: addDays(onlyCycle.startDate, defaultCycle + defaultPeriod - 1),
+        startDate: addDays(onlyCycle.startDate, -defaultCycle),
+        endDate: addDays(onlyCycle.startDate, -defaultCycle + defaultPeriod - 1),
         periodLength: defaultPeriod,
       },
+      onlyCycle,
     ],
     { defaultCycleLength: defaultCycle, defaultPeriodLength: defaultPeriod }
   );

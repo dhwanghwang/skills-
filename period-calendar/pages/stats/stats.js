@@ -17,7 +17,8 @@ Page({
   async loadStats() {
     try {
       const cycles = await cycleService.listCycles();
-      const prediction = predict(cycles);
+      const settings = wx.getStorageSync('periodSettings') || {};
+      const prediction = predict(cycles, settings);
 
       const stats = this.calcStats(cycles);
 
