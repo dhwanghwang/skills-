@@ -22,6 +22,12 @@
   "analysis_version": "soccer-predict v1.3.9",
   "recommendation": "赫根 -1",
   "probability": 0.56,
+  "handicap_recommendation": "赫根 -1 @1.85",
+  "handicap_probability": 0.56,
+  "handicap_ev": 0.04,
+  "ou_recommendation": "大 2.5 @1.90",
+  "ou_probability": 0.58,
+  "ou_ev": 0.10,
   "predicted_score": "2-0",
   "formal_recommendation": true,
   "report_path": "soccer-prediction-journal/reports/2026-08-01/match-2912225.md",
@@ -36,10 +42,13 @@
 - `artifact_action` 只能是 `generated|refreshed|not_run`，表示这份 JSON/Markdown 是怎样产生的。
 - `match_id` 必须为纯数字字符串；不要写成 JSON 数字，以免未来 ID 格式变化造成兼容问题。
 - `kickoff_time` 和 `odds_snapshot_at` 使用 ISO 8601，并包含 `+08:00`。
-- `probability` 为 `0..1` 数值或 `null`。
+- `probability` 为 `0..1` 数值或 `null`。`handicap_probability` 和 `ou_probability` 同理。
+- `recommendation` 为综合最佳推荐（让球盘或大小球盘中 EV 最高者）。`handicap_recommendation` 和 `ou_recommendation` 分别为让球盘和大小球盘各自的最佳推荐，格式为"方向 @赔率"。
+- `handicap_ev` 和 `ou_ev` 为对应推荐的期望值（EV），可为正/负/零数值或 `null`。
 - `missing_data` 始终为数组，`error` 始终为字符串。
 - `success` 必须给出正式 `report_path`，且对应 Markdown 完整存在。
-- `waiting/incomplete/failed` 的 `formal_recommendation` 必须为 `false`；可在 `recommendation` 中写“等待首发”或“数据不足，不投注”等非投注结论。
+- `success` 时 `handicap_recommendation` 和 `ou_recommendation` 不可为空字符串；`waiting/incomplete/failed` 时可为空字符串。
+- `waiting/incomplete/failed` 的 `formal_recommendation` 必须为 `false`；可在 `recommendation` 中写"等待首发"或"数据不足，不投注"等非投注结论。
 - `reused` 只出现在本次 `run-manifest.json` 的 `run_action` 中；复用时不要改写正式 JSON，正式 JSON 保留原来的 `artifact_action`。
 
 ## run-manifest.json

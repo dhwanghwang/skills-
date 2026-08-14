@@ -121,6 +121,12 @@ def validate_result_json(
         "analysis_version",
         "recommendation",
         "probability",
+        "handicap_recommendation",
+        "handicap_probability",
+        "handicap_ev",
+        "ou_recommendation",
+        "ou_probability",
+        "ou_ev",
         "predicted_score",
         "formal_recommendation",
         "report_path",
@@ -153,6 +159,47 @@ def validate_result_json(
         or not 0 <= probability <= 1
     ):
         errors.append(f"{label}.probability must be null or a number from 0 to 1")
+    # handicap_probability
+    hc_prob = data.get("handicap_probability")
+    if hc_prob is not None and (
+        isinstance(hc_prob, bool)
+        or not isinstance(hc_prob, (int, float))
+        or not 0 <= hc_prob <= 1
+    ):
+        errors.append(f"{label}.handicap_probability must be null or a number from 0 to 1")
+    # ou_probability
+    ou_prob = data.get("ou_probability")
+    if ou_prob is not None and (
+        isinstance(ou_prob, bool)
+        or not isinstance(ou_prob, (int, float))
+        or not 0 <= ou_prob <= 1
+    ):
+        errors.append(f"{label}.ou_probability must be null or a number from 0 to 1")
+    # handicap_ev
+    hc_ev = data.get("handicap_ev")
+    if hc_ev is not None and (
+        isinstance(hc_ev, bool)
+        or not isinstance(hc_ev, (int, float))
+    ):
+        errors.append(f"{label}.handicap_ev must be null or a number")
+    # ou_ev
+    ou_ev = data.get("ou_ev")
+    if ou_ev is not None and (
+        isinstance(ou_ev, bool)
+        or not isinstance(ou_ev, (int, float))
+    ):
+        errors.append(f"{label}.ou_ev must be null or a number")
+    # handicap_recommendation and ou_recommendation must be strings
+    if not isinstance(data.get("handicap_recommendation"), str):
+        errors.append(f"{label}.handicap_recommendation must be a string")
+    if not isinstance(data.get("ou_recommendation"), str):
+        errors.append(f"{label}.ou_recommendation must be a string")
+    # success status requires non-empty handicap and ou recommendations
+    if expected_status == "success":
+        if not data.get("handicap_recommendation", "").strip():
+            errors.append(f"{label}.handicap_recommendation must not be empty when status is success")
+        if not data.get("ou_recommendation", "").strip():
+            errors.append(f"{label}.ou_recommendation must not be empty when status is success")
     if not isinstance(data.get("missing_data"), list):
         errors.append(f"{label}.missing_data must be an array")
     if not isinstance(data.get("error"), str):

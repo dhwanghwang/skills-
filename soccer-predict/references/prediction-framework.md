@@ -235,9 +235,39 @@ Under EV              = P(under_win) * under_odds - P(over_win)
 ```
 
 ### Final Output
-1. Best betting recommendation based on highest positive EV
-2. Predicted final score
-3. Confidence level for each recommendation
+
+每场预测必须输出以下三组结果，缺一不可：
+
+**1. 让球盘（Asian Handicap）推荐**
+- 推荐方向（主队或客队）+ 盘口（如 -1, +0.5, -0.75）
+- 推荐赔率
+- 赢盘概率 P
+- 期望值 EV
+- 星级（1-4星）
+
+**2. 大小球盘（Over/Under）推荐**
+- 推荐方向（大球或小球）
+- 盘口线（如 2.5, 2/2.5, 3）
+- 推荐赔率
+- 赢盘概率 P
+- 期望值 EV
+- 星级（1-4星）
+
+**3. 综合推荐与预测比分**
+- 综合最佳推荐：让球盘与大小球盘中 EV 最高者
+- 预测最终比分
+- 综合信心等级
+
+示例输出格式：
+
+```
+让球盘推荐：赫根 -1 @1.85 | 概率 56% | EV +4% | ★★★★
+大小球推荐：大 2.5 @1.90 | 概率 58% | EV +10% | ★★★★
+综合推荐：大 2.5 @1.90（EV最高）
+预测比分：2-0
+```
+
+**JSON 输出约束**：`handicap_recommendation`、`handicap_probability`、`handicap_ev`、`ou_recommendation`、`ou_probability`、`ou_ev` 六个字段在 `analysis_status=success` 时必须填写，不可为空。
 
 ---
 
@@ -253,7 +283,9 @@ Under EV              = P(under_win) * under_odds - P(over_win)
 - **联赛**: [联赛名称]
 - **时间**: YYYY-MM-DD HH:MM
 - **结果**: 待确认
-- **预测**: [盘口推荐及星级] + [大小球推荐及星级]
+- **让球盘推荐**: [盘口+方向+赔率+星级] | 概率 [P%]
+- **大小球推荐**: [盘口线+方向+赔率+星级] | 概率 [P%]
+- **综合推荐**: [让球盘或大小球盘中EV最高者]
 - **比分预测**: [预测比分]
 - **复盘状态**: 待确认结果后复盘
 ```

@@ -64,6 +64,12 @@ class ValidateRunTests(unittest.TestCase):
             "analysis_version": "soccer-predict v1.3.9",
             "recommendation": "主胜" if status == "success" else "数据不足，不投注",
             "probability": 0.56 if status == "success" else None,
+            "handicap_recommendation": "国际迈阿密 -1 @1.85" if status == "success" else "",
+            "handicap_probability": 0.56 if status == "success" else None,
+            "handicap_ev": 0.04 if status == "success" else None,
+            "ou_recommendation": "大 2.5 @1.90" if status == "success" else "",
+            "ou_probability": 0.58 if status == "success" else None,
+            "ou_ev": 0.10 if status == "success" else None,
             "predicted_score": "2-1" if status == "success" else "",
             "formal_recommendation": status == "success",
             "report_path": (
