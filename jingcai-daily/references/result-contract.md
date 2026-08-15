@@ -110,3 +110,12 @@ Manifest 约束：
 4. 仅发布校验通过的成功产物；失败刷新保留旧正式文件。
 5. 更新 manifest 后用 `--phase final` 校验。
 6. final 校验通过后再更新汇总和历史。
+
+## 日汇总产物
+
+`reports/{business_date}/` 下的日汇总必须同时生成两种格式，缺一不可：
+
+- `daily-summary.json`：结构化汇总，供程序消费。字段包含 `schema_version`、`date`、`competition`、`window`、`run_id`、`odds_cutoff`、`data_sources`、`total_matches`、`success_matches`、`status_stats`（candidates/success/reused/waiting/incomplete/failed/excluded）、`recommendations`（每场含 jingcai_no、match_id、match、league、kickoff、handicap_recommendation/handicap_probability/handicap_ev、ou_recommendation/ou_probability/ou_ev、predicted_score、confidence、key_reason）、`parlay`、`value_pick`、`high_value`、`report_paths`。
+- `daily-summary.md`：人类可读汇总，与返回给用户的 Markdown 汇总一致，包含业务窗口、运行 ID、赔率截点、状态统计、逐场双盘汇总表格（每场必须含让球盘推荐+概率、大小球推荐+概率、预测比分）、核心推荐、报告链接和免责声明。
+
+两文件路径：`reports/{business_date}/daily-summary.json` 与 `reports/{business_date}/daily-summary.md`，随正式报告一起发布并推送 GitHub。

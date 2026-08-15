@@ -18,7 +18,9 @@ User can specify preferred output format:
 Quick prediction results only - best for fast decisions:
 - Match info summary
 - Key odds data (main lines)
-- Best pick with probability and EV
+- **Asian Handicap pick** (direction + line + probability + EV)
+- **Over/Under pick** (over/under + line + probability + EV)
+- Best overall pick (highest EV between handicap and O/U)
 - Predicted score
 
 ### Mode B: Markdown 报告模式
@@ -27,6 +29,9 @@ Comprehensive Markdown analysis report:
 - Detailed step-by-step analysis
 - Probability calculations with formulas
 - EV analysis for all options
+- **让球盘推荐**（方向 + 盘口 + 概率 + EV + 星级）
+- **大小球推荐**（大/小 + 盘口线 + 概率 + EV + 星级）
+- 综合推荐与预测比分
 
 **Default**: If user doesn't specify, use Mode B (Markdown report) for first prediction, then ask preference.
 

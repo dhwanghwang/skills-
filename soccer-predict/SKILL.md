@@ -19,7 +19,7 @@ description: >
 
 用户请求预测时，询问或推断偏好的输出格式：
 
-- **简洁模式 (Concise)**: 快速结果 - 最佳推荐、概率、EV、预测比分
+- **简洁模式 (Concise)**: 快速结果 - 让球盘推荐、大小球推荐、概率、EV、预测比分
 - **Markdown 报告模式**: 完整 Markdown 分析报告，含数据表格、公式和关键图表描述
 
 未指定时：默认使用 Markdown 报告模式。
@@ -47,7 +47,7 @@ description: >
 
 采集完成后，立即进入工作流二。
 
-**⚠️ 存档规则（强制）**：预测完成后，必须将比赛ID、联赛、盘口、推荐、预测比分写入 `F:\Workbuddy\soccer\.workbuddy\memory\football-match-history.md`。格式参照已有条目，状态标记为"待确认"。不存档=不完整。
+**⚠️ 存档规则（强制）**：预测完成后，必须将比赛ID、联赛、盘口、**让球盘推荐、大小球盘推荐**、预测比分写入 `F:\Workbuddy\soccer\.workbuddy\memory\football-match-history.md`。格式参照已有条目，状态标记为"待确认"。不存档=不完整。
 
 ---
 
@@ -69,11 +69,13 @@ description: >
 **默认初始权重**：基于 AI 概率判断设置，通过赛后复盘自动优化。
 
 **输出格式：**
-- 亚盘分析及其赢盘概率
-- 大小球分析及其赢盘概率
-- 所有选项的 EV 值
-- 最佳投注推荐
+- **让球盘推荐**：方向 + 盘口 + 赔率 + 赢盘概率 + EV + 星级
+- **大小球推荐**：方向（大/小）+ 盘口线 + 赔率 + 赢盘概率 + EV + 星级
+- 综合推荐（让球盘与大小球盘中 EV 最高者）
 - 预测比分
+- 所有选项的 EV 值
+
+> **JSON 字段要求**：`success` 状态必须同时填写 `handicap_recommendation` / `handicap_probability` / `handicap_ev` 和 `ou_recommendation` / `ou_probability` / `ou_ev` 六个字段（详见 jingcai-daily 的 result-contract.md）。
 
 ---
 
