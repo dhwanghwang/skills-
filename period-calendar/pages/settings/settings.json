@@ -1,6 +1,0 @@
-{
-  "usingComponents": {
-    "remind-btn": "/components/remind-btn/remind-btn"
-  },
-  "navigationBarTitleText": "我的"
-}
