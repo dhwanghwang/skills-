@@ -8,9 +8,41 @@
 
 ## Data Source
 
-Base URL: `https://zq.titan007.com/analysis/{match_id}cn.htm`
+**唯一指定数据源：titan007（新球体育 / 球探体育）。禁止用其他站点（SportScore / OddsPortal / BetExplorer / nowgoal / aiscore 等）的盘口数据替代或顶替。**
 
-Use 新球体育 (XinQiu Sports) data provider on the page.
+> 2026-09-11 用户指令固化：后续所有预测**只抓 titan007**。titan007 未收录或某类盘口缺失时，该场/该维度判 `waiting` 并留空，**不得**改用其他来源，也不得估测。
+
+### 已验证可用入口（2026-09-11 实测通过，全部用 WebFetch）
+
+| 用途 | URL | 返回内容 |
+|---|---|---|
+| **基本面主源** | `https://zq.titan007.com/analysis/{match_id}cn.htm` | 对赛往绩、近期战绩、联赛盘路走势（主/客/全场/半场赢盘率与大球率）、相同盘路、进球数/单双、未来赛程 |
+| **亚盘（让球盘）** | `https://vip.titan007.com/AsianOdds_n.aspx?id={match_id}` | 15 家公司 ×（初盘/即时）盘口 + 主客水位，附即时变化流水 |
+| **大小球** | `https://vip.titan007.com/OverDown_n.aspx?id={match_id}` | 15 家公司 ×（初盘/即时）进球数线 + 大球/小球水位，附变化流水 |
+| **欧赔（胜平负）** | `https://op1.titan007.com/oddslist/{match_id}.htm` | 百家欧指：主胜/和/客胜即时赔率 + 主和客胜率 + 返还率 + 凯利指数 |
+| **赛程/取 ID** | `https://live.titan007.com/` | 当日全部比赛；ID 出现在 `javascript:addConcern({id},10)` 与 `MatchVIP.aspx?id={id}` 中 |
+| 比赛详情 | `https://live.titan007.com/detail/{match_id}cn.htm` | 逐场赛果与过程数据 |
+
+### 已确认失效的入口（勿再使用）
+
+| 错误 URL | 结果 |
+|---|---|
+| `https://zq.titan007.com/asia/{id}.htm` | **404** |
+| `https://www.titan007.com/cn/AsianOdds.aspx?ScheduleID={id}` | 无数据 |
+| `https://vip.titan007.com/Odds_n.aspx?id={id}` | **404** |
+| `https://vip.titan007.com/EuroOdds_n.aspx?id={id}` | **404** |
+
+### 抓取方式与两个必知约定
+
+1. **必须用 WebFetch**：curl / Bash 请求 titan007 会 TLS 握手失败。
+2. **水位是港盘，需换算**：titan007 亚盘页的水位是不含本金的港盘（如 `0.92`），**EV 计算前必须 +1 换算为含本金小数盘**（`0.92 → 1.92`）。欧赔页的赔率则是正常的含本金小数赔，不换算。
+3. **盘口中文对照**：平手=0｜平手/半球=±0.25｜半球=±0.5｜半球/一球=±0.75｜一球=±1｜一球/球半=±1.25｜球半=±1.5｜球半/两球=±1.75｜两球=±2｜两球/两球半=±2.25｜两球半=±2.5｜两球半/三球=±2.75｜三球=±3。带 `*`（如 `*平/半`）表示即时盘。
+4. **基准公司**：以 **澳\***（澳门）与 **Crow\***（Crown）即时盘为准；记录时同时给出两家以便交叉。
+
+### titan007 未收录时的处理
+
+- live.titan007.com 找不到该场 → **无 titan007 ID**，用 `业务日+序号` 作 match_id（如 `20260911001`），`analysis_status` 判 `waiting`，让球盘字段留空，并在 `missing_data` 注明"titan007 未收录，无亚盘报价"。
+- 仅在 titan007 页面整体打不开（站点故障）时，才允许临时换源，且必须在报告中显式标注"titan007 不可用，本次改用 XXX 临时源"。
 
 ## Input Formats
 
@@ -81,26 +113,23 @@ Accept either format from user:
 
 ## Extraction Procedure
 
-1. Navigate to the match analysis page using `browser navigate`
-2. Extract basic match info (teams, league, time, venue, weather)
-3. Extract Asian handicap data from the "亚让" tab/section
-4. Extract over/under data from the "进球数" tab/section
-5. Extract European odds from the "胜平负" tab/section
-6. Extract team fundamentals from the main analysis page
-7. If available (near match time), extract lineup data from "阵容" section
-8. If lineup not yet published, note this and proceed with available data
-9. Compile all data into a structured format before proceeding to prediction
+### 标准抓取顺序（4 次 WebFetch，全部命中 titan007）
 
-### Browser Navigation Tips
-- The page may have multiple tabs for different data sections
-- Use `browser act` to click between tabs if needed
-- Use `browser console exec` with JavaScript to extract table data
-- If data is loaded dynamically, wait for page to fully render before extraction
+1. **取 ID**：WebFetch `https://live.titan007.com/` → 从 `addConcern({id},10)` 提取 7 位 match_id（含日期与开赛时间、赛事名、队名）
+2. **基本面**：WebFetch `https://zq.titan007.com/analysis/{id}cn.htm`
+   → 对赛往绩、近期战绩（含比分/盘口/大小球结果）、联赛盘路走势（全场+半场、主/客拆分赢盘率与大球率）、相同盘路、进球数/单双、未来赛程
+   （一次问清，不要重复抓取）
+3. **亚盘**：WebFetch `https://vip.titan007.com/AsianOdds_n.aspx?id={id}`
+   → 取澳\*与 Crow\*的**即时**盘口与主客水位（港盘，+1 换算）
+4. **大小球**：WebFetch `https://vip.titan007.com/OverDown_n.aspx?id={id}`
+   → 取即时进球数线与大球/小球水位
+5. **欧赔**：WebFetch `https://op1.titan007.com/oddslist/{id}.htm`
+   → 取主流公司即时主胜/和/客胜，及页尾的即时平均值与返还率（可直接用于去水位概率）
+6. **首发阵容**：开赛前 30–60 分钟才公布，未公布标"待公布"，不得编造；可另查伤停
+7. 汇总成结构化数据后再进入五步预测
 
-### Tabs to Navigate
-- Main page: Team fundamentals, recent form, H2H
-- 亚让 (Asian Handicap): Asian handicap odds
-- 进球数 (Goals): Over/under odds
-- 胜平负 (1X2): European odds
-- 角球 (Corners): Corner kick data (if available)
-- 阵容 (Lineups): Starting XI (timing-dependent)
+### 注意事项
+- 亚盘/大小球页的公司名被脱敏（`澳*`、`Crow*`、`36*`），这是正常的，按原样记录即可。
+- 页面底部有**即时变化流水**（时间 + 盘口 + 水位），可用于判断早→即走势方向，必读。
+- 欧赔页尾的"即时平均值"已含主/和/客胜率与返还率，可直接作为市场基准概率，无需自行计算。
+- 若某一步 WebFetch 返回 404，先核对 URL 是否为上表中的**已验证入口**，勿改用其他站点。

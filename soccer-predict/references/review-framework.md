@@ -31,6 +31,8 @@ Use deviation analysis method to review:
 |-----------|-----------|--------|-----------|
 | Final score | X-X | X-X | +/- |
 | Asian handicap result | Win/Lose | Win/Lose | Correct/Wrong |
+
+> **结算口径**：让球盘复盘一律按**亚洲盘**结算——走水（整数盘口且净胜球恰好等于盘口）记为走水、不计命中也不计失误；四分盘按赢半 / 输半计入。**竞足（竞彩）场次同样用亚盘口径**，不得改用竞彩让球胜平负（让胜/让平/让负，无走水保护），竞彩结果仅作对照附注。
 | Over/under result | Over/Under | Over/Under | Correct/Wrong |
 | Key factor accuracy | - | - | Analysis |
 

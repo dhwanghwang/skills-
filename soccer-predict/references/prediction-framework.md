@@ -1,269 +1,147 @@
 # Prediction Framework
 
-## Table of Contents
-1. [Output Modes](#output-modes)
-2. [Step 1: Data Organization](#step-1-data-organization)
-3. [Step 2: Fundamental Analysis](#step-2-fundamental-analysis)
-4. [Step 3: Odds Probability Calculation](#step-3-odds-probability-calculation)
-5. [Step 4: Model Prediction](#step-4-model-prediction)
-6. [Step 5: Win Probability & Betting Advice](#step-5-win-probability--betting-advice)
+五步量化框架：数据整理 → 基本面分析 → 概率计算 → 模型预测 → EV 与建议。
 
----
+## 全局铁律
 
-## Output Modes
+- **赔率取值**：最终计算一律用即时盘（"即"），"早"盘仅用于走势对比；下文不再逐条重复。
+- **双盘必答**：每场必须同时给出让球盘和大小球盘推荐，缺一不可。
+- **禁止虚构**：阵容未公布标注"待公布"，只用现有信息推断，不得编造缺失数据。
+- **让球盘口径（强制）**：让球盘一律使用**亚洲盘（亚盘）**数据——盘口（平手 / 平半 / 半球 / 半一 / 一球 / 一球半 …及其受让形式）、即时水位与"早→即"走势，全部取自 titan007 亚盘页面。**不因该场是否为中国竞彩（竞足）在售场次而改用竞彩让球胜平负三选项**：竞足场次同样以亚盘为唯一推荐与结算口径，竞彩让球胜平负（让胜/让平/让负）仅在报告中作为"对照参考"附注，不参与命中统计。
+  - 结算按亚盘规则：走水（盘口整数且净胜球恰等于盘口）本金返还、不计胜负；四分盘（-0.75 / -1.25 等）按赢半 / 输半结算。
+  - 竞彩三选项无走水保护（净胜 1 球遇 ±1 判"让平"即输），与亚盘结论可能相反；遇此差异时以亚盘为准，并在报告中显式标注"竞彩口径对照：让平（输）"。
+  - 亚盘数据抓取失败或该场无亚盘时，让球盘判定 `waiting` / 降为参考，不得用竞彩让球盘或欧赔换算替代。
+- **回避整数盘（规则59，作用域已限定）**：**仅适用于 |盘口| ≤ 2.0 的让球盘与大小球整数线（2.0 / 3.0 / 4.0）**。实证：09-09 单轮 4 个整数盘全部走水；09-10 曼联大小球 4.0 被回避、实际恰 4 球走水（累计 5/5 = 100%）。优先推荐 ±0.25 / ±0.5 / ±0.75 / ±1.25 等分拆盘与非整数大小球线。若为整数盘/整数线，**EV 打 8 折**且不得给 ★★★，报告中标注"整数盘走水风险"。
+  - ⚠️ **不得套用于深盘**：|盘口| ≥ 2.5 的深盘净胜球分布与 ±1 完全不同，此时**规则63 优先**，不打 8 折、不因整数封顶（见下条）。
+- **深盘（规则63，已验证 4/4）**：同时满足 (a) λ 已按规则61 上调（高进球轮）；(b) 双方跨级/跨联赛断层；(c) 总进球预期 ≥3.5 时，|盘口| ≥2.5 的深盘**可给至 ★★★**，并必须同步给出"让球方进 ≥4 球"的直接概率校验。实证：巴萨 −3、巴黎 −3.5、拜仁 −3.0、曼联 −2.75 全部打穿，而我们 4 次因回避深盘改站受让方 → 0/4。
+- **负 EV 不进推荐栏（已扩展至大小球）**：让球盘与大小球 EV < 0 时均不得作为推荐输出，只写进"不推荐原因/观望"栏。另新增"低价值"提示：**EV 在 0 ~ +6% 之间须标注"低价值，建议观望"**（09-10 费内巴切大 2.75 的 EV 仅 +5.8%，结果落空）。
+- **比分别同质化（规则60）**：同一批次预测中同一个比分最多出现 2 次；不得因"判断小球"就硬编码 1-1。低进球场次须给出 2–3 个并列候选（如 0-1 / 1-0 / 0-0）并标注主候选；精确比分仅作娱乐性参考，不作为主推载体。
+- **信息密度分层（规则62）**：开场先给本场打标签——
+  - **高**：五大联赛、欧冠正赛（**双方均五大联赛**）、焦点战 → 方向与比分权重可上调 1 档；
+  - **中**：欧冠正赛但含非五大联赛球队（布拉格斯拉维亚、博德闪耀、加拉塔萨雷、沙巴巴库等）→ 方向权重不上调；
+  - **低**：J3/JFL 联赛杯、新赛季前杯赛（如澳足总杯）、跨级别低关注度赛事 → **只输出大小球与盘口推荐**，方向与比分须显式标注"低信息密度·不可靠"，且不作为主推。
+  - **方向可靠性的强弱门槛（规则67）**：即便是"高"信息密度，**方向权重上调仅限强弱悬殊场**（1X2 最低赔 ≤1.50 或最高赔 ≥4.50）。**势均力敌场**（1X2 三项中至少两项落在 2.00–4.00）方向权重下调 1 档，且**必须显式列出平局概率；平局概率 ≥25% 时不得给方向推荐**（09-10 四个势均力敌场方向全错，其中 2 场打出 1-1 平局而预测完全未计平局）。
+- **欧冠联赛阶段专项（规则61/65/66）**：
+  - λ总 在联赛均值基础上 **+0.5**；回落至 +0.2 须**同时**满足：双方近 5 场场均总进球**均** <2.0、非跨联赛遭遇战、修正后 λ 仍 ≥2.5（原宽松条件在 09-10 误触发 2 次）。**禁止推小 3.25 以下**。
+  - **让球盘已不是有效维度（三轮 3/18 = 16.7%）**：除 "|盘口| ≥2.5 且满足规则63 三条件"外，一律写"不推荐"，仅在报告中作参考。
+  - **用方差而非均值定盘**：单场须考察双方近 5 场总进球的方差，σ ≥1.5 的高方差场次盘口线放宽 ±0.5 或改推"大球 + 让球方"组合（欧冠首轮进球呈双峰分布，09-10 六场为 2/2/5/4/5/5，无一场 3 球）。
 
-User can specify preferred output format:
+## 输出模式
 
-### Mode A: 简洁模式 (Concise)
-Quick prediction results only - best for fast decisions:
-- Match info summary
-- Key odds data (main lines)
-- **Asian Handicap pick** (direction + line + probability + EV)
-- **Over/Under pick** (over/under + line + probability + EV)
-- Best overall pick (highest EV between handicap and O/U)
-- Predicted score
+- **Mode A 简洁**：比赛信息 + 关键赔率 + 让球盘推荐 + 大小球推荐 + 综合最佳 + 预测比分。
+- **Mode B Markdown 报告**：完整数据表、逐步分析、概率公式、全选项 EV、双盘推荐（含星级）、综合推荐与比分。
 
-### Mode B: Markdown 报告模式
-Comprehensive Markdown analysis report:
-- Complete data tables (all odds, all bookmakers)
-- Detailed step-by-step analysis
-- Probability calculations with formulas
-- EV analysis for all options
-- **让球盘推荐**（方向 + 盘口 + 概率 + EV + 星级）
-- **大小球推荐**（大/小 + 盘口线 + 概率 + EV + 星级）
-- 综合推荐与预测比分
+未指定时默认 Mode B，首场后询问偏好。
 
-**Default**: If user doesn't specify, use Mode B (Markdown report) for first prediction, then ask preference.
+## Step 1：数据整理
 
----
+1. **基本面**：近 5-10 场战绩、主客场胜率、近 3-5 年交锋、积分榜与分差、双方战意。
+2. **阵容**：首发（开赛前 30-60 分钟公布）、核心球员数据、伤停、板凳深度；未公布时标注"待公布"。
+3. **战意**：保级 / 争冠 / 季后赛等动机。
+4. **欧赔**：主平客"即"与"早"两行完整数据。
+5. **亚盘**："即"与"早"两行完整数据。规则：欧赔较低一方即让球方（上盘），上盘水位在让球方一侧。
+6. **大小球**："即"与"早"两行完整数据。
+7. **增强数据**（供大小球模型）：半场进球模式、角球、净胜球分布。
 
-## Step 1: Data Organization
+## Step 2：基本面分析
 
-Organize all collected data into these categories:
+**2.1 盘口合理性**：用机器学习基线判定盘口偏深或偏浅，输出分析后的公平盘口值。
 
-### 1. Fundamentals
-- Recent form (last 5-10 matches: W/D/L, goals scored/conceded)
-- Home/away performance (home win% / away win%)
-- Head-to-head records (last 3-5 years: W/D/L, goal trends)
-- League standings and points gap
-- Both teams' match motivation
-- **If lineup not yet published**: Note "阵容未公布" and proceed with available data
+**2.2 盘口走势与机构意图**：对比"早"→"即"的盘口与水位变化并判断动机——
 
-### 2. Squad & Lineup
-- Starting XI (if available - typically 30-60 min before kickoff)
-- Key player stats (goals/assists)
-- Injury/suspension list (especially core player absence impact)
-- Bench depth (substitute player quality)
-- **If unavailable**: Mark as "待公布" and use squad depth info only
+- 升盘（如 平手 → 半球/一球）：通常看好强队；
+- 降盘：通常看好弱队；
+- 水位调整：盘口未变、仅水位变动。
 
-### 3. Match Importance
-- Both teams' motivation (relegation battle / title race / playoff fight)
+同步观察成交量异动（sharp money 与 public money 背离）与欧亚转换是否一致，识别诱盘（转换值与亚盘明显不匹配）。
 
-### 4. European Odds (1X2)
-- Complete home/draw/away odds data ("即" = instant and "早" = early/opening rows)
-- **IMPORTANT**: Use "即" (instant/live) data for final calculation
+## Step 3：概率计算
 
-### 5. Asian Handicap
-- Complete handicap data ("即" and "早" rows)
-- **CRITICAL**: Must record BOTH "早" (early) AND "即" (instant) data
-- **FINAL CALCULATION**: Use "即" (instant/live) data only - this is the final odds before match
-- Analyze line movement: if "早" → "即" changed (up/down), record the trend
-- Rule: the team with lower European odds corresponds to the handicap-giving side (upper plate)
-- Upper plate odds are on the handicap-giving team's side
-
-### 6. Over/Under
-- Complete over/under data ("即" and "早" rows)
-- **FINAL CALCULATION**: Use "即" (instant/live) data for final calculation
-
-### 7. Enhanced Data (for Over/Under Model)
-- Half-time goals patterns (半场进球模式)
-- Corner kicks statistics (角球数据)
-- Goal difference distribution (净胜球分布)
-
----
-
-## Step 2: Fundamental Analysis
-
-Perform deep analysis based on collected data:
-
-### 2.1 Handicap Rationality Check
-Use machine learning baseline model to analyze whether the handicap is reasonable.
-- Determine if handicap is set deep (high) or shallow (low)
-- Output the analyzed fair handicap value
-
-### 2.2 Line Movement Tracking (盘口走势分析)
-- Record early odds ("早" = opening line) and instant odds ("即" = current line)
-- Analyze changes: "早" → "即" direction (upgraded/downgraded/no change)
-- **Example**: If early line was 平手(0) and instant line is 半球/一球(-0.75), record as "升盘"
-- Determine the true purpose behind odds movements:
-  - Upgraded line (升盘): typically indicates stronger team being favored
-  - Downgraded line (降盘): typically indicates weaker team being favored
-  - Water adjustment: odds movement without line change
-
-### 2.3 Bookmaker Intent Analysis
-- Analyze the real intention behind bookmaker adjustments
-- Look for patterns in how lines have moved from opening ("早") to current ("即")
-
-### 2.4 Betting Volume Analysis
-- Use odds data to analyze betting volume changes
-- Capture abnormal movements (sharp money, public money divergence)
-
-### 2.5 European-to-Asian Odds Conversion
-- Convert European odds to Asian handicap and odds
-- Check if Asian handicap matches the converted values
-- Identify potential trap lines (诱盘) where there's a mismatch
-
----
-
-## Step 3: Odds Probability Calculation
-
-**CRITICAL**: Use INSTANT odds ("即") for final calculation - this represents the final odds before match kickoff.
-
-### Asian Handicap Probability
-Calculate from latest (instant) Asian handicap data ("即" row):
+用即时盘（"即"）去除水位后计算真实隐含概率，亚盘与大小球通用：
 
 ```
-1. Home win implied probability:    P(home) = 1 / (1 + home_odds)
-2. Away win implied probability:    P(away) = 1 / (1 + away_odds)
-3. Total implied probability:       P(total) = P(home) + P(away)
-4. Home true implied probability:   P(true_home) = P(home) / P(total)
-5. Away true implied probability:   P(true_away) = P(away) / P(total)
-6. Margin (juice):                 P(margin) = 1 - 1 / P(total)
+P(home)  = 1 / (1 + home_odds)
+P(away)  = 1 / (1 + away_odds)
+P(total) = P(home) + P(away)
+P(true_home) = P(home) / P(total)
+P(true_away) = P(away) / P(total)
+Margin   = 1 - 1 / P(total)
 ```
 
-### Over/Under Probability
-Same calculation method applied to instant over/under odds ("即" row):
+大小球同理，将 home / away 替换为 over / under。
 
-```
-1. Over implied probability:        P(over) = 1 / (1 + over_odds)
-2. Under implied probability:       P(under) = 1 / (1 + under_odds)
-3. Total implied probability:       P(total) = P(over) + P(under)
-4. Over true implied probability:  P(true_over) = P(over) / P(total)
-5. Under true implied probability: P(true_under) = P(under) / P(total)
-6. Margin (juice):                 P(margin) = 1 - 1 / P(total)
-```
+## Step 4：模型预测
 
----
+### 初始权重（基于 AI 概率判断，赛后复盘自动优化）
 
-## Step 4: Model Prediction
-
-### Initial Weight Allocation (Based on AI Probability Assessment)
-
-**Weight principles**: Allocate based on initial AI probabilistic judgment, then auto-optimize through post-match review iterations.
-
-Default weights (initial):
 | Feature | Asian Handicap | Over/Under |
 |---------|:-------------:|:----------:|
 | Odds implied probability | 0.35 | 0.15 |
 | Fundamental analysis | 0.20 | 0.10 |
 | Team fundamentals | 0.20 | 0.10 |
-| Squad power decay | 0.20 | 0.05 | <!-- v1.1: up from 0.15 -->
+| Squad power decay | 0.20 | 0.05 |
 | Motivation | 0.10 | 0.05 |
 | Enhanced data (half-goals/corners) | - | 0.15 |
 | Environment factor | - | 0.10 |
 | League factor | - | 0.10 |
-| **Defense injury coefficient** | - | **0.15** | <!-- v1.1: new -->
+| **Defense injury coefficient** | - | **0.15** |
 | Other | - | 0.05 |
 
-**Note**: Weights will be auto-adjusted through post-match review and learning (see review-framework.md).
+权重随复盘迭代自动调整，详见 review-framework.md。
 
-### 4.1 Asian Handicap Logistic Regression Model
+### 4.1 亚盘逻辑回归
 
-Perform deep analysis using logistic regression. Quantify input features, standardize, and output comprehensive prediction probability.
+权重优先级：赔率 > 基本面 > 即时阵容 > 战意（机构信息 > 短期扰动 > 长期趋势 > 主观因素）。
 
-**Analysis weight priority** (descending):
-```
-Odds data > Fundamental analysis > Real-time lineup > Motivation
-(Bookmaker info > Short-term disruption > Long-term trends > Subjective factors)
-```
+输入特征：近期胜率与主客场差异、伤停计算的阵容衰减系数、0-1 标准化战意、Step 2 结果、**Step 3 隐含概率（核心特征）**。
 
-**Input features**:
-| Feature | Description |
-|---------|-------------|
-| Team fundamentals | Recent win rate, home/away differential |
-| Squad power decay coefficient | Calculated from injury/suspension list |
-| Motivation label | 0-1 standardized |
-| Fundamental analysis | Results from Step 2 |
-| Odds implied probability | **Core feature** from Step 3 |
+### 4.2 大小球逻辑回归（增强版）
 
-### 4.2 Over/Under Logistic Regression Model (Enhanced)
+开盘点 > 分析盘 = 高开；开盘点 < 分析盘 = 低开。
 
-Deep analysis of over/under handicap using logistic regression with enhanced features.
-
-**Key comparison**: If opened line > analyzed line -> high open; If opened line < analyzed line -> shallow open.
-
-**Input features** (for both home and away teams):
 | Feature | Weight | Description |
 |---------|:------:|-------------|
-| xG and xGA | 0.12 | Expected goals and expected goals against |
-| League factor | 0.10 | League-specific scoring patterns (MLS~55% over, etc.) |
-| Recent win rate | 0.05 | Last N matches |
-| Recent 5-match goals | 0.07 | Goals in last 5 games (reduced from 0.10 — low recent goals ≠ low match goals under injury conditions) |
-| H2H history | 0.05 | Head-to-head goal patterns |
-| Home/away differential | 0.10 | Home vs away scoring difference |
-| Squad power decay coefficient | 0.05 | From injury/suspension list (attacking side only) |
-| **Defense injury coefficient** | **0.15** | **🆕 KEY RULE: GK absence → +0.75~1 goal adj; CB absence → +0.5; DM absence → +0.25** |
-| Motivation label | 0.05 | 0-1 standardized |
-| Environment factor | 0.10 | Weather, venue altitude, rest days |
-| Half-time goals pattern | 0.08 | Half-time scoring behavior (high-scoring half vs low) |
-| Corner kicks | 0.08 | Corner kick data (indicates attacking intensity) |
-| Fundamental analysis | 0.10 | Results from Step 2 |
-| Odds implied probability | 0.15 | **Core feature** from Step 3 |
+| xG and xGA | 0.12 | 预期进球与预期失球 |
+| League factor | 0.10 | 联赛进球特性（如 MLS 约 55% 大球） |
+| Recent win rate | 0.05 | 近 N 场 |
+| Recent 5-match goals | 0.07 | 近 5 场进球（由 0.10 下调：伤停下近期进球少 ≠ 本场进球少） |
+| H2H history | 0.05 | 交锋进球模式 |
+| Home/away differential | 0.10 | 主客进球差 |
+| Squad power decay | 0.05 | 伤停衰减（仅计进攻端） |
+| **Defense injury coefficient** | **0.15** | 见下方防守伤停规则 |
+| Motivation label | 0.05 | 0-1 标准化 |
+| Environment factor | 0.10 | 天气、海拔、休息天数 |
+| Half-time goals pattern | 0.08 | 半场进球倾向 |
+| Corner kicks | 0.08 | 角球（反映进攻强度） |
+| Fundamental analysis | 0.10 | Step 2 结果 |
+| Odds implied probability | 0.15 | **核心特征** |
 
-**🆕 Defense Injury Rule (v1.1)**:
-When a team is missing key defensive players, the over/under model MUST adjust upward:
-- **GK absent** (致命级): +0.75 to +1.0 goal adjustment toward OVER. This is the single most impactful injury type for goals.
-- **CB absent** (严重级): +0.5 goal adjustment
-- **DM absent** (中等级): +0.25 goal adjustment
-- **FB absent** (轻微级): +0.1 goal adjustment
-- Stacking: multiple positions missing → adjustments stack (e.g., GK + DM = +1.0 to +1.25)
-- **Critical correction**: Defense injuries do NOT mean "both teams score less → under". The correct interpretation is "conceding team leaks more goals → toward OVER". Attacking injuries only affect that team's scoring, they do NOT cancel out opponent's defensive collapse.
+**防守伤停规则（v1.1）**：核心防守球员缺阵时必须上调进球预期——
 
-**Output**: Predicted home goals, away goals, and total goals.
+- GK 缺阵（致命）：+0.75 ~ +1.0
+- CB 缺阵（严重）：+0.5
+- DM 缺阵（中等）：+0.25
+- FB 缺阵（轻微）：+0.1
+- 多位置叠加累加（如 GK + DM = +1.0 ~ +1.25）
 
----
+**关键纠偏**：防守伤停不等于"双方进球少 → 小球"，正确理解是"失球方漏球更多 → 走向大球"；进攻端伤停只影响本队进球，不能抵消对手防线崩塌。
 
-## Step 5: Win Probability & Betting Advice
+输出：主队进球、客队进球、总进球。
 
-### Win Probability Prediction
-Combine odds analysis and model analysis to predict:
-- Asian Handicap: P(home_win) and P(away_win)
-- Over/Under: P(over_win) and P(under_win)
-
-### Expected Value (EV) Calculation
+## Step 5：EV 与最终建议
 
 ```
-Asian Handicap Home EV = P(home_win) * home_odds - P(away_win)
-Asian Handicap Away EV = P(away_win) * away_odds - P(home_win)
-Over EV               = P(over_win) * over_odds - P(under_win)
-Under EV              = P(under_win) * under_odds - P(over_win)
+让球盘 主队 EV = P(home_win) * home_odds - P(away_win)
+让球盘 客队 EV = P(away_win) * away_odds - P(home_win)
+大球 EV       = P(over_win) * over_odds - P(under_win)
+小球 EV       = P(under_win) * under_odds - P(over_win)
 ```
 
-### Final Output
+每场输出：
 
-每场预测必须输出以下三组结果，缺一不可：
-
-**1. 让球盘（Asian Handicap）推荐**
-- 推荐方向（主队或客队）+ 盘口（如 -1, +0.5, -0.75）
-- 推荐赔率
-- 赢盘概率 P
-- 期望值 EV
-- 星级（1-4星）
-
-**2. 大小球盘（Over/Under）推荐**
-- 推荐方向（大球或小球）
-- 盘口线（如 2.5, 2/2.5, 3）
-- 推荐赔率
-- 赢盘概率 P
-- 期望值 EV
-- 星级（1-4星）
-
-**3. 综合推荐与预测比分**
-- 综合最佳推荐：让球盘与大小球盘中 EV 最高者
-- 预测最终比分
-- 综合信心等级
-
-示例输出格式：
+1. **让球盘推荐**：方向 + 亚盘盘口 + 亚盘水位 + 赢盘概率 + EV + 星级（1-4）；走水 / 赢半 / 输半的结算方式须一并写明
+2. **大小球推荐**：大/小 + 盘口线 + 赔率 + 赢盘概率 + EV + 星级（1-4）
+3. **综合推荐**：两盘中 EV 最高者 + 预测比分 + 信心等级
 
 ```
 让球盘推荐：赫根 -1 @1.85 | 概率 56% | EV +4% | ★★★★
@@ -272,15 +150,11 @@ Under EV              = P(under_win) * under_odds - P(over_win)
 预测比分：2-0
 ```
 
-**JSON 输出约束**：`handicap_recommendation`、`handicap_probability`、`handicap_ev`、`ou_recommendation`、`ou_probability`、`ou_ev` 六个字段在 `analysis_status=success` 时必须填写，不可为空。
+**JSON 约束**：`analysis_status=success` 时 `handicap_recommendation`、`handicap_probability`、`handicap_ev`、`ou_recommendation`、`ou_probability`、`ou_ev` 六个字段必须填写，不可为空。
 
----
+## Step 6：存档（MANDATORY）
 
-## Step 6: 存档（MANDATORY）
-
-**每次预测完成后必须执行，不可跳过。**
-
-将以下信息追加到 `F:\Workbuddy\soccer\.workbuddy\memory\football-match-history.md`：
+不可跳过。追加到 `F:\Workbuddy\soccer\.workbuddy\memory\football-match-history.md`：
 
 ```markdown
 ## YYYY-MM-DD [主队] vs [客队]
@@ -288,13 +162,11 @@ Under EV              = P(under_win) * under_odds - P(over_win)
 - **联赛**: [联赛名称]
 - **时间**: YYYY-MM-DD HH:MM
 - **结果**: 待确认
-- **让球盘推荐**: [盘口+方向+赔率+星级] | 概率 [P%]
+- **让球盘推荐**: [亚盘盘口+方向+水位+星级] | 概率 [P%]
 - **大小球推荐**: [盘口线+方向+赔率+星级] | 概率 [P%]
-- **综合推荐**: [让球盘或大小球盘中EV最高者]
+- **综合推荐**: [两盘中EV最高者]
 - **比分预测**: [预测比分]
 - **复盘状态**: 待确认结果后复盘
 ```
 
-同时简要记录赛前关键数据（伤停、盘口走势、核心判断依据），以便复盘时对照。
-
-**不存档 = 工作流未完成。**
+同时简要记录赛前关键数据（伤停、盘口走势、核心判断依据）供复盘对照。不存档 = 工作流未完成。

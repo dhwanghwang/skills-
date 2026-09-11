@@ -44,6 +44,7 @@
 - `kickoff_time` 和 `odds_snapshot_at` 使用 ISO 8601，并包含 `+08:00`。
 - `probability` 为 `0..1` 数值或 `null`。`handicap_probability` 和 `ou_probability` 同理。
 - `recommendation` 为综合最佳推荐（让球盘或大小球盘中 EV 最高者）。`handicap_recommendation` 和 `ou_recommendation` 分别为让球盘和大小球盘各自的最佳推荐，格式为"方向 @赔率"。
+- **让球盘口径**：`handicap_recommendation` 必须来自**亚洲盘**（如 `赫根 -1 @1.85`、`富川FC +0.5 @1.92`），盘口为亚盘盘口、赔率为亚盘即时水位；**不论该场是否为竞足在售场次**，均不得填写竞彩让球胜平负（让胜/让平/让负）作为让球盘推荐。`handicap_probability` 为亚盘赢盘概率，`handicap_ev` 按亚盘结算口径计算（走水返还本金、四分盘按赢半/输半）。竞彩对照值可写在报告正文，不进入这三个字段。
 - `handicap_ev` 和 `ou_ev` 为对应推荐的期望值（EV），可为正/负/零数值或 `null`。
 - `missing_data` 始终为数组，`error` 始终为字符串。
 - `success` 必须给出正式 `report_path`，且对应 Markdown 完整存在。
@@ -118,4 +119,4 @@ Manifest 约束：
 - `daily-summary.json`：结构化汇总，供程序消费。字段包含 `schema_version`、`date`、`competition`、`window`、`run_id`、`odds_cutoff`、`data_sources`、`total_matches`、`success_matches`、`status_stats`（candidates/success/reused/waiting/incomplete/failed/excluded）、`recommendations`（每场含 jingcai_no、match_id、match、league、kickoff、handicap_recommendation/handicap_probability/handicap_ev、ou_recommendation/ou_probability/ou_ev、predicted_score、confidence、key_reason）、`parlay`、`value_pick`、`high_value`、`report_paths`。
 - `daily-summary.md`：人类可读汇总，与返回给用户的 Markdown 汇总一致，包含业务窗口、运行 ID、赔率截点、状态统计、逐场双盘汇总表格（每场必须含让球盘推荐+概率、大小球推荐+概率、预测比分）、核心推荐、报告链接和免责声明。
 
-两文件路径：`reports/{business_date}/daily-summary.json` 与 `reports/{business_date}/daily-summary.md`，随正式报告一起发布并推送 GitHub。
+两文件路径：`reports/{business_date}/daily-summary.json` 与 `reports/{business_date}/daily-summary.md`，随正式报告一起发布。GitHub 推送不再自动执行，由用户显式触发，见 SKILL.md 3.5。
